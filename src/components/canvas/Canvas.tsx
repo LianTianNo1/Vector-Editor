@@ -349,13 +349,9 @@ const Canvas: React.FC<CanvasProps> = ({ width, height }) => {
           canvas.selection = true;
           canvas.defaultCursor = 'text';
 
-          canvas.on('mouse:down', (o: any) => {
-            // 如果点击了已存在的文本对象，不创建新文本
-            if (o.target && o.target.type === 'i-text') {
-              return;
-            }
-
-            const pointer = canvas.getPointer(o.e);
+          // 创建一个函数来处理文本的创建和编辑
+          const createAndEditText = (pointer: { x: number; y: number }) => {
+            // 创建新文本
             const text = new fabric.IText('点击编辑文本', {
               left: pointer.x,
               top: pointer.y,
@@ -365,15 +361,23 @@ const Canvas: React.FC<CanvasProps> = ({ width, height }) => {
               evented: true,
               editable: true,
             });
+
+            // 添加到画布
             canvas.add(text);
-            canvas.setActiveObject(text);
-            text.enterEditing();
-            text.selectAll();
+            
+            // 使用setTimeout确保DOM更新后再进入编辑模式
+            setTimeout(() => {
+              canvas.setActiveObject(text);
+              text.enterEditing();
+              text.selectAll();
+              canvas.requestRenderAll();
+            }, 0);
 
             // 监听文本修改完成事件
             text.on('editing:exited', () => {
               if (text.text.trim() === '') {
                 canvas.remove(text);
+                canvas.requestRenderAll();
                 return;
               }
               const newObject: CanvasObject = {
@@ -394,13 +398,48 @@ const Canvas: React.FC<CanvasProps> = ({ width, height }) => {
               };
               dispatch(addObject(newObject));
             });
+          };
+
+          canvas.on('mouse:down', (o: any) => {
+            // 如果点击了已存在的文本对象，不创建新文本
+            if (o.target && o.target.type === 'i-text') {
+              return;
+            }
+
+            // 检查是否有正在编辑的文本
+            const activeObject = canvas.getActiveObject();
+            if (activeObject && activeObject.type === 'i-text' && activeObject.isEditing) {
+              activeObject.exitEditing();
+              canvas.requestRenderAll();
+              return;
+            }
+
+            // 移除所有现有的选择
+            canvas.discardActiveObject();
+            canvas.requestRenderAll();
+
+            // 创建新文本
+            const pointer = canvas.getPointer(o.e);
+            createAndEditText(pointer);
           });
 
           // 添加双击事件处理
           canvas.on('mouse:dblclick', (o: any) => {
             if (o.target && o.target.type === 'i-text') {
-              o.target.enterEditing();
-              o.target.selectAll();
+              // 如果有其他正在编辑的文本，先退出编辑
+              const activeObject = canvas.getActiveObject();
+              if (activeObject && activeObject !== o.target && activeObject.type === 'i-text' && activeObject.isEditing) {
+                activeObject.exitEditing();
+                canvas.requestRenderAll();
+              }
+
+              // 使用setTimeout确保DOM更新后再进入编辑模式
+              setTimeout(() => {
+                canvas.setActiveObject(o.target);
+                o.target.enterEditing();
+                o.target.selectAll();
+                canvas.requestRenderAll();
+              }, 0);
             }
           });
           break;
