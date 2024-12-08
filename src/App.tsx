@@ -12,6 +12,7 @@ import './App.css'
 // 创建主题
 const theme = createTheme({
   palette: {
+    mode: 'dark',
     primary: {
       main: '#3498db',
     },
@@ -22,10 +23,17 @@ const theme = createTheme({
       main: '#e74c3c',
     },
     background: {
-      default: '#f5f6fa',
+      default: '#121212',
+      paper: '#1e1e1e',
     },
-    text: {
-      primary: '#333333',
+  },
+  components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          overflow: 'hidden', // 禁用滚动条
+        },
+      },
     },
   },
 })
@@ -113,11 +121,12 @@ function App() {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            overflow: 'auto',
+            overflow: 'hidden',
+            backgroundColor: '#1e1e1e',
           }}>
             <Canvas
-              width={800}
-              height={600}
+              width={3000}
+              height={2000}
               zoom={zoom}
               canvasRef={canvasRef}
             />

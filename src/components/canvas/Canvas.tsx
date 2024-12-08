@@ -23,16 +23,122 @@ const Canvas: React.FC<CanvasProps> = ({ width, height, zoom, canvasRef }) => {
   // 初始化 FabricJS 画布
   useEffect(() => {
     if (canvasRefLocal.current && !fabricCanvasRef.current) {
-      // 确保只初始化一次
       fabricCanvasRef.current = new fabric.Canvas(canvasRefLocal.current, {
         width,
         height,
-        backgroundColor: '#ffffff',
+        backgroundColor: '#1e1e1e',
+        selection: true,
         preserveObjectStacking: true,
+        allowTouchScrolling: true,
+      });
+
+      const canvas = fabricCanvasRef.current;
+
+      // 创建网格背景
+      const smallGridSize = 10;
+      const mediumGridSize = 50;
+      const largeGridSize = 100;
+      
+      const smallGridColor = 'rgba(255, 255, 255, 0.03)';
+      const mediumGridColor = 'rgba(255, 255, 255, 0.07)';
+      const largeGridColor = 'rgba(255, 255, 255, 0.12)';
+
+      // 创建小网格
+      for (let i = 0; i < width / smallGridSize; i++) {
+        canvas.add(new fabric.Line([i * smallGridSize, 0, i * smallGridSize, height], {
+          stroke: smallGridColor,
+          strokeWidth: 0.5,
+          selectable: false,
+          evented: false,
+          excludeFromExport: true,
+        }));
+      }
+      
+      for (let i = 0; i < height / smallGridSize; i++) {
+        canvas.add(new fabric.Line([0, i * smallGridSize, width, i * smallGridSize], {
+          stroke: smallGridColor,
+          strokeWidth: 0.5,
+          selectable: false,
+          evented: false,
+          excludeFromExport: true,
+        }));
+      }
+
+      // 创建中等网格
+      for (let i = 0; i < width / mediumGridSize; i++) {
+        canvas.add(new fabric.Line([i * mediumGridSize, 0, i * mediumGridSize, height], {
+          stroke: mediumGridColor,
+          strokeWidth: 0.7,
+          selectable: false,
+          evented: false,
+          excludeFromExport: true,
+        }));
+      }
+      
+      for (let i = 0; i < height / mediumGridSize; i++) {
+        canvas.add(new fabric.Line([0, i * mediumGridSize, width, i * mediumGridSize], {
+          stroke: mediumGridColor,
+          strokeWidth: 0.7,
+          selectable: false,
+          evented: false,
+          excludeFromExport: true,
+        }));
+      }
+
+      // 创建大网格
+      for (let i = 0; i < width / largeGridSize; i++) {
+        canvas.add(new fabric.Line([i * largeGridSize, 0, i * largeGridSize, height], {
+          stroke: largeGridColor,
+          strokeWidth: 1,
+          selectable: false,
+          evented: false,
+          excludeFromExport: true,
+        }));
+      }
+      
+      for (let i = 0; i < height / largeGridSize; i++) {
+        canvas.add(new fabric.Line([0, i * largeGridSize, width, i * largeGridSize], {
+          stroke: largeGridColor,
+          strokeWidth: 1,
+          selectable: false,
+          evented: false,
+          excludeFromExport: true,
+        }));
+      }
+
+      // 创建中心参考线
+      const centerX = width / 2;
+      const centerY = height / 2;
+
+      // 垂直中心线
+      canvas.add(new fabric.Line([centerX, 0, centerX, height], {
+        stroke: 'rgba(0, 162, 255, 0.5)',
+        strokeWidth: 1,
+        strokeDashArray: [5, 5],
+        selectable: false,
+        evented: false,
+        excludeFromExport: true,
+      }));
+
+      // 水平中心线
+      canvas.add(new fabric.Line([0, centerY, width, centerY], {
+        stroke: 'rgba(0, 162, 255, 0.5)',
+        strokeWidth: 1,
+        strokeDashArray: [5, 5],
+        selectable: false,
+        evented: false,
+        excludeFromExport: true,
+      }));
+
+      // 将所有网格线移到最底层
+      canvas.getObjects().forEach(obj => {
+        if (obj.type === 'line') {
+          canvas.sendToBack(obj);
+        }
       });
 
       if (canvasRef) {
-        canvasRef.current = fabricCanvasRef.current;
+        canvasRef.current = canvas;
       }
 
       // 监听选择事件
@@ -67,6 +173,88 @@ const Canvas: React.FC<CanvasProps> = ({ width, height, zoom, canvasRef }) => {
 
       // 初始化时渲染一次
       fabricCanvasRef.current.renderAll();
+
+      // 添加鼠标滚轮缩放
+      canvas.on('mouse:wheel', function(opt) {
+        const delta = opt.e.deltaY;
+        let zoom = canvas.getZoom();
+        zoom *= 0.999 ** delta;
+        if (zoom > 20) zoom = 20;
+        if (zoom < 0.01) zoom = 0.01;
+        
+        // 获取鼠标位置
+        const pointer = canvas.getPointer(opt.e);
+        const point = new fabric.Point(pointer.x, pointer.y);
+        
+        // 以鼠标位置为中心进行缩放
+        canvas.zoomToPoint(point, zoom);
+        
+        opt.e.preventDefault();
+        opt.e.stopPropagation();
+      });
+
+      // 添加画布拖动功能
+      let isDragging = false;
+      let lastPosX: number;
+      let lastPosY: number;
+
+      canvas.on('mouse:down', function(opt) {
+        // 只有在按住空格键或中键时才能拖动画布
+        if (opt.e.button === 1 || opt.e.spaceKey) {
+          isDragging = true;
+          lastPosX = opt.e.clientX;
+          lastPosY = opt.e.clientY;
+          canvas.selection = false;
+          canvas.defaultCursor = 'grabbing';
+        }
+      });
+
+      canvas.on('mouse:move', function(opt) {
+        if (isDragging) {
+          const e = opt.e;
+          const vpt = canvas.viewportTransform;
+          if (!vpt) return;
+          
+          vpt[4] += e.clientX - lastPosX;
+          vpt[5] += e.clientY - lastPosY;
+          
+          lastPosX = e.clientX;
+          lastPosY = e.clientY;
+          
+          canvas.requestRenderAll();
+        }
+      });
+
+      canvas.on('mouse:up', function() {
+        isDragging = false;
+        canvas.selection = true;
+        canvas.defaultCursor = 'default';
+      });
+
+      // 添加键盘事件监听
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.code === 'Space') {
+          canvas.defaultCursor = 'grab';
+        }
+      };
+
+      const handleKeyUp = (e: KeyboardEvent) => {
+        if (e.code === 'Space') {
+          canvas.defaultCursor = 'default';
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('keyup', handleKeyUp);
+
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('keyup', handleKeyUp);
+        if (fabricCanvasRef.current) {
+          fabricCanvasRef.current.dispose();
+          fabricCanvasRef.current = null;
+        }
+      };
     }
 
     return () => {
@@ -310,16 +498,19 @@ const Canvas: React.FC<CanvasProps> = ({ width, height, zoom, canvasRef }) => {
             const height = Math.abs(y2 - y1);
             
             // 创建新的线条对象
-            const newLine = new fabric.Line([x1, y1, x2, y2], {
-              stroke: '#000000',
-              strokeWidth: 2,
-              selectable: true,
-              evented: true,
-              originX: 'center',
-              originY: 'center',
-              left: centerX,
-              top: centerY,
-            });
+            const newLine = new fabric.Line(
+              [x1, y1, x2, y2],
+              {
+                stroke: '#000000',
+                strokeWidth: 2,
+                selectable: true,
+                evented: true,
+                originX: 'center',
+                originY: 'center',
+                left: centerX,
+                top: centerY,
+              }
+            );
             
             canvas.remove(line);
             canvas.add(newLine);
@@ -617,10 +808,10 @@ const Canvas: React.FC<CanvasProps> = ({ width, height, zoom, canvasRef }) => {
 
   return (
     <div style={{
-      border: '1px solid #ccc',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
       borderRadius: '4px',
       margin: '20px',
-      boxShadow: '0 0 10px rgba(0,0,0,0.1)'
+      backgroundColor: '#1e1e1e',
     }}>
       <canvas ref={canvasRefLocal} width={width} height={height} />
     </div>

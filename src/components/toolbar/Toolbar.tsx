@@ -33,20 +33,15 @@ const Toolbar: React.FC = () => {
   };
 
   return (
-    <Paper 
-      elevation={3}
-      sx={{
-        position: 'fixed',
-        left: '20px',
-        top: '50%',
-        transform: 'translateY(-50%)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
-        padding: 1,
-        backgroundColor: 'background.paper',
-      }}
-    >
+    <Box sx={{
+      width: '48px',
+      backgroundColor: 'background.paper',
+      borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 1,
+      p: 1,
+    }}>
       {tools.map((tool) => (
         <ToolButton
           key={tool.id}
@@ -56,7 +51,7 @@ const Toolbar: React.FC = () => {
           onClick={() => handleToolClick(tool.id)}
         />
       ))}
-    </Paper>
+    </Box>
   );
 };
 
