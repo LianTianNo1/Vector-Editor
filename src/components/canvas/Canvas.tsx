@@ -9,10 +9,12 @@ declare const fabric: any;
 interface CanvasProps {
   width: number;
   height: number;
+  zoom: number;
+  canvasRef?: React.MutableRefObject<fabric.Canvas | null>;
 }
 
-const Canvas: React.FC<CanvasProps> = ({ width, height }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+const Canvas: React.FC<CanvasProps> = ({ width, height, zoom, canvasRef }) => {
+  const canvasRefLocal = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<any | null>(null);
   const dispatch = useDispatch();
   
@@ -20,14 +22,18 @@ const Canvas: React.FC<CanvasProps> = ({ width, height }) => {
 
   // 初始化 FabricJS 画布
   useEffect(() => {
-    if (canvasRef.current && !fabricCanvasRef.current) {
+    if (canvasRefLocal.current && !fabricCanvasRef.current) {
       // 确保只初始化一次
-      fabricCanvasRef.current = new fabric.Canvas(canvasRef.current, {
+      fabricCanvasRef.current = new fabric.Canvas(canvasRefLocal.current, {
         width,
         height,
         backgroundColor: '#ffffff',
         preserveObjectStacking: true,
       });
+
+      if (canvasRef) {
+        canvasRef.current = fabricCanvasRef.current;
+      }
 
       // 监听选择事件
       fabricCanvasRef.current.on('selection:created', (e: any) => {
@@ -69,7 +75,7 @@ const Canvas: React.FC<CanvasProps> = ({ width, height }) => {
         fabricCanvasRef.current = null;
       }
     };
-  }, [dispatch, width, height]);
+  }, [dispatch, width, height, canvasRef]);
 
   // 处理工具切换
   useEffect(() => {
@@ -469,6 +475,20 @@ const Canvas: React.FC<CanvasProps> = ({ width, height }) => {
     }
   }, [tool, dispatch]);
 
+  // 监听缩放变化
+  useEffect(() => {
+    if (fabricCanvasRef.current) {
+      const canvas = fabricCanvasRef.current;
+      const center = canvas.getCenter();
+      canvas.setZoom(zoom);
+      canvas.absolutePan({
+        x: (canvas.getWidth() / 2 - center.left * zoom),
+        y: (canvas.getHeight() / 2 - center.top * zoom)
+      });
+      canvas.requestRenderAll();
+    }
+  }, [zoom]);
+
   // 同步对象状态
   useEffect(() => {
     if (fabricCanvasRef.current) {
@@ -596,12 +616,13 @@ const Canvas: React.FC<CanvasProps> = ({ width, height }) => {
   }, [objects]);
 
   return (
-    <div className="canvas-container" style={{ 
+    <div style={{
       border: '1px solid #ccc',
+      borderRadius: '4px',
       margin: '20px',
       boxShadow: '0 0 10px rgba(0,0,0,0.1)'
     }}>
-      <canvas ref={canvasRef} />
+      <canvas ref={canvasRefLocal} width={width} height={height} />
     </div>
   );
 };
