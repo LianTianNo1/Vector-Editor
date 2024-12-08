@@ -1,6 +1,17 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { CanvasState, CanvasObject, ToolType } from '../types/canvas';
 
+interface CanvasState {
+  objects: CanvasObject[];
+  selectedObject: string | null;
+  tool: ToolType;
+  zoom: number;
+  history: {
+    past: CanvasObject[][];
+    future: CanvasObject[][];
+  };
+}
+
 const initialState: CanvasState = {
   objects: [],
   selectedObject: null,
@@ -35,9 +46,11 @@ export const canvasSlice = createSlice({
     },
     
     // 删除对象
-    deleteObject: (state, action: PayloadAction<string>) => {
+    removeObject: (state, action: PayloadAction<string>) => {
       state.objects = state.objects.filter(obj => obj.id !== action.payload);
-      state.selectedObject = null;
+      if (state.selectedObject === action.payload) {
+        state.selectedObject = null;
+      }
       state.history.past.push([...state.objects]);
       state.history.future = [];
     },
@@ -82,7 +95,7 @@ export const canvasSlice = createSlice({
 export const {
   addObject,
   updateObject,
-  deleteObject,
+  removeObject,
   selectObject,
   setTool,
   setZoom,

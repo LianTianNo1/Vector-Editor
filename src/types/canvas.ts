@@ -14,19 +14,25 @@ export type ToolType =
  * 画布对象类型
  */
 export interface CanvasObject {
-  id: string;           // 对象唯一标识
-  type: string;         // 对象类型
-  left: number;         // 左边距
-  top: number;          // 上边距
-  width: number;        // 宽度
-  height: number;       // 高度
-  fill: string;         // 填充颜色
-  stroke: string;       // 描边颜色
-  strokeWidth: number;  // 描边宽度
-  angle: number;        // 旋转角度
-  scaleX: number;       // X轴缩放
-  scaleY: number;       // Y轴缩放
-  opacity: number;      // 透明度
+  id: string;
+  type: string;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  fill: string;
+  stroke: string;
+  strokeWidth: number;
+  angle: number;
+  scaleX: number;
+  scaleY: number;
+  opacity: number;
+  text?: string;
+  path?: any[];
+  x1?: number;
+  y1?: number;
+  x2?: number;
+  y2?: number;
 }
 
 /**

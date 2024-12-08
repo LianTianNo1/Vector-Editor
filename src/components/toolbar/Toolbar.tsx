@@ -1,68 +1,62 @@
 import React from 'react';
-import { Box, Divider } from '@mui/material';
-import {
-  MouseOutlined,
-  CropSquare,
-  RadioButtonUnchecked,
-  Timeline,
-  Create,
-  TextFields,
-  Delete
-} from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../store';
-import { setTool } from '../../store/canvasSlice';
-import { ToolType } from '../../types/canvas';
+import { Box, Paper } from '@mui/material';
+import { 
+  MouseOutlined,
+  CreateOutlined,
+  RectangleOutlined,
+  CircleOutlined,
+  LinearScaleOutlined,
+  TextFieldsOutlined,
+  DeleteOutlineOutlined,
+} from '@mui/icons-material';
 import ToolButton from './ToolButton';
+import { setTool } from '../../store/canvasSlice';
+import { RootState } from '../../store';
+
+const tools = [
+  { id: 'select', icon: MouseOutlined, tooltip: '选择工具' },
+  { id: 'pen', icon: CreateOutlined, tooltip: '画笔工具' },
+  { id: 'rectangle', icon: RectangleOutlined, tooltip: '矩形工具' },
+  { id: 'circle', icon: CircleOutlined, tooltip: '圆形工具' },
+  { id: 'line', icon: LinearScaleOutlined, tooltip: '直线工具' },
+  { id: 'text', icon: TextFieldsOutlined, tooltip: '文本工具' },
+  { id: 'eraser', icon: DeleteOutlineOutlined, tooltip: '橡皮擦' },
+];
 
 const Toolbar: React.FC = () => {
   const dispatch = useDispatch();
   const currentTool = useSelector((state: RootState) => state.canvas.tool);
 
-  // 工具列表配置
-  const tools: Array<{
-    type: ToolType;
-    icon: any;
-    tooltip: string;
-  }> = [
-    { type: 'select', icon: MouseOutlined, tooltip: '选择工具' },
-    { type: 'rectangle', icon: CropSquare, tooltip: '矩形工具' },
-    { type: 'circle', icon: RadioButtonUnchecked, tooltip: '圆形工具' },
-    { type: 'line', icon: Timeline, tooltip: '线条工具' },
-    { type: 'pen', icon: Create, tooltip: '自由绘制' },
-    { type: 'text', icon: TextFields, tooltip: '文本工具' },
-    { type: 'eraser', icon: Delete, tooltip: '橡皮擦' },
-  ];
-
-  const handleToolClick = (toolType: ToolType) => {
-    dispatch(setTool(toolType));
+  const handleToolClick = (toolId: string) => {
+    dispatch(setTool(toolId));
   };
 
   return (
-    <Box
+    <Paper 
+      elevation={3}
       sx={{
-        width: 48,
-        backgroundColor: 'background.paper',
-        borderRight: 1,
-        borderColor: 'divider',
+        position: 'fixed',
+        left: '20px',
+        top: '50%',
+        transform: 'translateY(-50%)',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        padding: '8px 0',
+        gap: 1,
+        padding: 1,
+        backgroundColor: 'background.paper',
       }}
     >
-      {tools.map((tool, index) => (
-        <React.Fragment key={tool.type}>
-          <ToolButton
-            icon={tool.icon}
-            tooltip={tool.tooltip}
-            selected={currentTool === tool.type}
-            onClick={() => handleToolClick(tool.type)}
-          />
-          {index === 0 && <Divider sx={{ width: '80%', margin: '8px 0' }} />}
-        </React.Fragment>
+      {tools.map((tool) => (
+        <ToolButton
+          key={tool.id}
+          icon={tool.icon}
+          tooltip={tool.tooltip}
+          selected={currentTool === tool.id}
+          onClick={() => handleToolClick(tool.id)}
+        />
       ))}
-    </Box>
+    </Paper>
   );
 };
 
